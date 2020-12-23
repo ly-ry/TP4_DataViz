@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8" />
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 350px;
+    }
+    h1 {
+      margin: 0;
+      position: fixed;
+      top: 50px;
+      left: 420px;
+      color: green;
+    }
+  </style>
+</head>
+
+<body id="arcviz">
+  <h1>My arc viz</h1>
+  <script>
+    const data = {
+      nodes: [
+        {
+          id: 1,
+          name: "A"
+        },
+        {
+          id: 2,
+          name: "B"
+        },
+        {
+          id: 3,
+          name: "C"
+        },
+        {
+          id: 4,
+          name: "D"
+        },
+        {
+          id: 5,
+          name: "E"
+        },
+        {
+          id: 6,
+          name: "F"
+        },
+        {
+          id: 7,
+          name: "G"
+        },
+        {
+          id: 8,
+          name: "H"
+        },
+        {
+          id: 9,
+          name: "I"
+        },
+        {
+          id: 10,
+          name: "J"
+        }
+      ],
+      links: [
+        {
+          source: 1,
+          target: 2
+        },
+        {
+          source: 1,
+          target: 5
+        },
+        {
+          source: 1,
+          target: 6
+        },
+
+        {
+          source: 2,
+          target: 3
+        },
+        {
+          source: 2,
+          target: 7
+        },
+        {
+          source: 3,
+          target: 4
+        },
+        {
+          source: 8,
+          target: 3
+        },
+        {
+          source: 4,
+          target: 5
+        },
+        {
+          source: 4,
+          target: 9
+        },
+        {
+          source: 5,
+          target: 10
+        }
+      ]
+    };
+    // Definition de la taille du svg
+    const margin = { top: 0, right: 30, bottom: 20, left: 10 },
+      width = 450 - margin.left - margin.right,
+      height = 300 - margin.top - margin.bottom;
+    // ajout du svg à la 'div id="arcviz"' de page html
+    var svg = d3
+      .select("#arcviz")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    // List of node names
+    let allNodes = data.nodes.map((d) => {
+      return d.name;
+    });
+
+    let scale = d3.scalePoint().domain(allNodes).range([0, width]);
+
+    var idToNodeName = {};
+
+    data.nodes.forEach(function (n) {
+      idToNodeName[n.id] = n;
+    });
+
+    let links = data.links;
+
+    drawPoints(allNodes);
+
+    svg
+      .selectAll("#link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", (d) => {
+        return idToNodeName[d.source].name + " " + idToNodeName[d.target].name;
+      })
+      .attr("d", (d) => {
+        let x1 = scale(idToNodeName[d.source].name),
+          x2 = scale(idToNodeName[d.target].name);
+
+        return drawArc(x1, x2);
+      })
+      .style("fill", "none")
+      .attr("stroke", "black");
+
+    function drawPoints(nodes) {
+      svg
+        .selectAll("g")
+        .data(nodes, (d) => {
+          return d;
+        })
+        .enter()
+        .append("circle")
+        .attr("cx", (d) => {
+          return scale(d);
+        })
+        .attr("cy", (d) => {
+          return height - 10;
+        })
+        .attr("r", 5)
+        .style("fill", "black")
+
+        //Interactivité
+        .on("mouseover", function (event, d) {
+          svg
+            .selectAll("." + d)
+            .attr("stroke", "red")
+            .style("stroke-width", "5px");
+        })
+        .on("mouseout", function (event, d) {
+          svg
+            .selectAll("." + d)
+            .attr("stroke", "black")
+            .style("stroke-width", "1px");
+        });
+
+      svg
+        .selectAll("text")
+        .data(nodes)
+        .enter()
+        .append("text")
+        .text((d) => d)
+        .attr("x", (d) => {
+          return scale(d) - 5 + "px";
+        })
+        .attr("y", (d) => {
+          return height + 10 + "px";
+        });
+    }
+    function drawArc(x1, x2) {
+      return [
+        "M",
+        x1,
+        height - 10, // the arc starts at the coordinate x=start, y=height-30 (where the starting node is)
+        "A", // A for elliptical arc
+        (x1 - x2) / 2,
+        ",", // coordinates of the inflexion point. Height of this point is proportional with start - end distance
+        (x1 - x2) / 2,
+        0,
+        0,
+        ",",
+        x1 < x2 ? 1 : 0,
+        x2,
+        ",",
+        height - 10
+      ].join(" ");
+    }
+  </script>
+</body>
+
